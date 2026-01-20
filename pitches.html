@@ -3,65 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Investment pitches by Soham A. Bhatia - Kelley School of Business student" />
+  <meta name="theme-color" content="#000000" />
   <title>Pitches | Soham A. Bhatia</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="dns-prefetch" href="https://docs.google.com" />
+  <link rel="dns-prefetch" href="https://raw.githubusercontent.com" />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
 
   <style>
-    /* MASTER THEME */
-    :root {
-      --bg: #000000;
-      --text: #e5e5e5;
-      --muted: #888888;
-      --accent: #ef4444;
-      --border: #333333;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: "JetBrains Mono", monospace;
-      margin: 0;
-      padding: 0;
-      line-height: 1.6;
-    }
-
-    /* NAVIGATION */
-    nav {
-      padding: 1.5rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .nav-links { display: flex; gap: 2rem; }
-
-    nav a {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 0.95rem;
-      transition: color 0.2s;
-    }
-    nav a:hover { color: var(--text); }
-    nav a.active { color: var(--text); text-decoration: underline; text-decoration-color: var(--accent); }
-
-    /* CONTENT */
-    main {
-      max-width: 900px;
-      margin: 4rem auto;
-      padding: 0 1.5rem;
-    }
-
-    h1 {
-      font-size: 1.2rem;
-      font-weight: 500;
-      margin-bottom: 2rem;
-      color: var(--text);
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 1rem;
-    }
+    /* PAGE-SPECIFIC STYLES - pitches.html */
 
     /* PITCH ITEMS */
     .pitch-container { display: flex; flex-direction: column; gap: 0.5rem; }
@@ -74,7 +28,7 @@
 
     .pitch-item:hover {
       border-color: var(--border);
-      background: #050505;
+      background: var(--bg-hover);
     }
 
     .pitch-header {
@@ -95,19 +49,19 @@
     .pitch-content {
       display: none;
       border-top: 1px solid var(--border);
-      background: #0a0a0a;
+      background: var(--bg-card);
       padding: 0 1rem 1rem 1rem;
     }
-    
+
     .pitch-item.open {
-      background: #0a0a0a;
+      background: var(--bg-card);
       border-color: var(--border);
     }
-    
+
     .pitch-item.open .pitch-content { display: block; }
-    
+
     .iframe-container { margin-top: 1rem; }
-    iframe { width: 100%; height: 600px; border: 1px solid var(--border); background: #111; }
+    iframe { width: 100%; height: 600px; border: 1px solid var(--border); background: var(--bg-input); }
     
     .download-link {
       display: block;
@@ -141,7 +95,12 @@
 
     <div class="pitch-container">
       
-      <div class="pitch-item" onclick="togglePitch(this)" 
+      <div class="pitch-item"
+           onclick="togglePitch(this)"
+           onkeydown="if(event.key==='Enter' || event.key===' '){event.preventDefault();togglePitch(this);}"
+           tabindex="0"
+           role="button"
+           aria-expanded="false"
            data-pdf="https://github.com/SohamBhatia2006/pitches/raw/main/VZ%20-%20Verizon%20Communications.pdf">
         
         <div class="pitch-header">
@@ -166,17 +125,40 @@
       const isOpen = item.classList.contains('open');
       const container = item.querySelector('.iframe-container');
       const pdfUrl = item.getAttribute('data-pdf');
+      const viewBtn = item.querySelector('.view-btn');
 
+      // Close all other pitches
       document.querySelectorAll('.pitch-item.open').forEach(openItem => {
-        openItem.classList.remove('open');
-        openItem.querySelector('.iframe-container').innerHTML = '';
-        openItem.querySelector('.view-btn').innerText = '[+] View Deck';
+        if (openItem !== item) {
+          openItem.classList.remove('open');
+          openItem.setAttribute('aria-expanded', 'false');
+          openItem.querySelector('.iframe-container').innerHTML = '';
+          openItem.querySelector('.view-btn').innerText = '[+] View Deck';
+        }
       });
 
+      // Toggle current pitch
       if (!isOpen) {
         item.classList.add('open');
-        item.querySelector('.view-btn').innerText = '[-] Close Deck';
-        container.innerHTML = `<iframe src="https://docs.google.com/viewer?url=${pdfUrl}&embedded=true"></iframe>`;
+        item.setAttribute('aria-expanded', 'true');
+        viewBtn.innerText = '[-] Close Deck';
+
+        // Show loading indicator
+        container.innerHTML = '<div class="loading-text" style="padding: 2rem; text-align: center;">Loading PDF viewer...</div>';
+
+        // Load iframe with slight delay
+        setTimeout(() => {
+          container.innerHTML = `<iframe
+            src="https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrl)}&embedded=true"
+            title="Investment pitch PDF viewer"
+            loading="lazy"
+          ></iframe>`;
+        }, 100);
+      } else {
+        item.classList.remove('open');
+        item.setAttribute('aria-expanded', 'false');
+        container.innerHTML = '';
+        viewBtn.innerText = '[+] View Deck';
       }
     }
   </script>

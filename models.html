@@ -3,70 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Financial models by Soham A. Bhatia - Kelley School of Business student" />
+  <meta name="theme-color" content="#000000" />
   <title>Models | Soham A. Bhatia</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="dns-prefetch" href="https://cdn.sheetjs.com" />
+  <link rel="dns-prefetch" href="https://raw.githubusercontent.com" />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
-  
-  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="styles.css" />
 
   <style>
-    /* MASTER THEME */
-    :root {
-      --bg: #000000;
-      --text: #e5e5e5;
-      --muted: #888888;
-      --accent: #ef4444;
-      --border: #333333;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: "JetBrains Mono", monospace;
-      margin: 0;
-      padding: 0;
-      line-height: 1.6;
-    }
-
-    /* NAVIGATION */
-    nav {
-      padding: 1.5rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--border);
-    }
-    .nav-links { display: flex; gap: 2rem; }
-    nav a { color: var(--muted); text-decoration: none; font-size: 0.95rem; transition: color 0.2s; }
-    nav a:hover { color: var(--text); }
-    nav a.active { color: var(--text); text-decoration: underline; text-decoration-color: var(--accent); }
-
-    /* CONTENT */
-    main { max-width: 900px; margin: 4rem auto; padding: 0 1.5rem; }
-    
-    h1 {
-      font-size: 1.2rem;
-      font-weight: 500;
-      margin-bottom: 2rem;
-      color: var(--text);
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 1rem;
-    }
+    /* PAGE-SPECIFIC STYLES - models.html */
 
     /* CARD STYLE */
     .model-container { display: flex; flex-direction: column; gap: 0.5rem; }
 
     .model-item {
       padding: 1.2rem;
-      border: 1px solid transparent; 
+      border: 1px solid transparent;
       border-radius: 4px;
       transition: all 0.2s ease;
     }
 
     .model-item:hover {
       border-color: var(--border);
-      background: #050505;
+      background: var(--bg-hover);
     }
 
     /* The row with Ticker and Buttons */
@@ -83,40 +46,32 @@
     /* Buttons */
     .btn-group { display: flex; gap: 10px; }
 
-    .btn {
-      color: var(--muted);
-      font-size: 0.85rem;
-      text-decoration: none;
-      border: 1px solid var(--border);
-      padding: 6px 12px;
-      border-radius: 4px;
-      transition: all 0.2s;
-      background: transparent;
-      cursor: pointer;
-      font-family: inherit;
-    }
-    .btn:hover { border-color: var(--accent); color: var(--text); }
-
-    /* 2. EXCEL VIEWER STYLES (Minimal & Dark) */
+    /* EXCEL VIEWER STYLES */
     .excel-viewer {
-        display: none; /* Hidden by default */
+        display: none;
         margin-top: 15px;
         border-top: 1px solid var(--border);
         padding-top: 15px;
     }
-    
+
     .tab-bar { margin-bottom: 10px; display: flex; gap: 5px; flex-wrap: wrap; }
-    .tab-btn { 
-        font-size: 12px; padding: 4px 8px; cursor: pointer; 
-        background: #111; border: 1px solid var(--border); color: var(--muted); 
+    .tab-btn {
+        font-size: 12px;
+        padding: 4px 8px;
+        cursor: pointer;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        color: var(--muted);
+        font-family: inherit;
+        transition: all 0.2s;
     }
     .tab-btn.active { color: var(--text); border-color: var(--muted); }
 
     /* The Grid */
     .grid-container { overflow: auto; max-height: 500px; }
     table { border-collapse: collapse; width: 100%; font-size: 13px; color: var(--text); }
-    td, th { border: 1px solid #333; padding: 4px 8px; white-space: nowrap; }
-    td:first-child { background: #111; color: var(--muted); text-align: center; font-weight: bold; }
+    td, th { border: 1px solid var(--border); padding: 4px 8px; white-space: nowrap; }
+    td:first-child { background: var(--bg-input); color: var(--muted); text-align: center; font-weight: bold; }
   </style>
 </head>
 
@@ -162,60 +117,119 @@
   </main>
 
   <script>
-    async function toggleModel(btn, filePath) {
-        // Find the viewer container inside this specific model card
-        const card = btn.closest('.model-item');
-        const viewer = card.querySelector('.excel-viewer');
-        const grid = viewer.querySelector('.grid-container');
-        const tabBar = viewer.querySelector('.tab-bar');
+    // Lazy loading for SheetJS library
+    let sheetJSLoaded = false;
 
-        // Toggle Open/Close
-        if (viewer.style.display === 'block') {
-            viewer.style.display = 'none';
-            btn.innerText = "View";
-            return;
+    async function loadSheetJS() {
+      if (sheetJSLoaded || typeof XLSX !== 'undefined') return;
+
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js';
+        script.onload = () => {
+          sheetJSLoaded = true;
+          resolve();
+        };
+        script.onerror = () => reject(new Error('Failed to load SheetJS library'));
+        document.head.appendChild(script);
+      });
+    }
+
+    async function toggleModel(btn, filePath) {
+      const card = btn.closest('.model-item');
+      const viewer = card.querySelector('.excel-viewer');
+      const grid = viewer.querySelector('.grid-container');
+      const tabBar = viewer.querySelector('.tab-bar');
+
+      // Close viewer if already open
+      if (viewer.style.display === 'block') {
+        viewer.style.display = 'none';
+        btn.innerText = "View";
+        btn.setAttribute('aria-expanded', 'false');
+        return;
+      }
+
+      // Show loading state
+      btn.innerText = "Loading...";
+      btn.disabled = true;
+      btn.setAttribute('aria-expanded', 'true');
+      viewer.style.display = 'block';
+
+      // Return early if already loaded
+      if (grid.innerHTML !== "" && !grid.querySelector('.loading-text')) {
+        btn.innerText = "Close";
+        btn.disabled = false;
+        return;
+      }
+
+      grid.innerHTML = '<span class="loading-text">Loading model...</span>';
+
+      try {
+        // Lazy load SheetJS library
+        await loadSheetJS();
+
+        // Fetch and parse Excel file
+        const response = await fetch(filePath);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
-        viewer.style.display = 'block';
+
+        const arrayBuffer = await response.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer);
+
+        // Generate tab buttons for each sheet
+        tabBar.innerHTML = "";
+        tabBar.setAttribute('role', 'tablist');
+
+        workbook.SheetNames.forEach((sheetName, index) => {
+          const tab = document.createElement("button");
+          tab.className = "tab-btn";
+          tab.innerText = sheetName;
+          tab.setAttribute('role', 'tab');
+          tab.setAttribute('aria-label', `View ${sheetName} sheet`);
+          tab.setAttribute('tabindex', '0');
+
+          if (index === 0) {
+            tab.classList.add('active');
+            tab.setAttribute('aria-selected', 'true');
+          } else {
+            tab.setAttribute('aria-selected', 'false');
+          }
+
+          // Click handler for tab switching
+          tab.onclick = () => {
+            // FIX: Scope to current tabBar only (not all tabs globally)
+            tabBar.querySelectorAll('.tab-btn').forEach(b => {
+              b.classList.remove('active');
+              b.setAttribute('aria-selected', 'false');
+            });
+            tab.classList.add('active');
+            tab.setAttribute('aria-selected', 'true');
+            grid.innerHTML = XLSX.utils.sheet_to_html(workbook.Sheets[sheetName]);
+          };
+
+          // Keyboard navigation for tabs
+          tab.onkeydown = (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              tab.click();
+            }
+          };
+
+          tabBar.appendChild(tab);
+        });
+
+        // Load first sheet
+        grid.innerHTML = XLSX.utils.sheet_to_html(workbook.Sheets[workbook.SheetNames[0]]);
         btn.innerText = "Close";
 
-        // Prevent reloading if already fetched
-        if (grid.innerHTML !== "") return;
-
-        grid.innerHTML = '<span style="color:#888">Loading model...</span>';
-
-        try {
-            // Fetch and Parse
-            const response = await fetch(filePath);
-            if (!response.ok) throw new Error("File not found");
-            
-            const arrayBuffer = await response.arrayBuffer();
-            const workbook = XLSX.read(arrayBuffer);
-
-            // Generate Tabs
-            tabBar.innerHTML = "";
-            workbook.SheetNames.forEach((sheetName, index) => {
-                const tab = document.createElement("button");
-                tab.className = "tab-btn";
-                tab.innerText = sheetName;
-                if (index === 0) tab.classList.add('active'); // Highlight first tab
-
-                tab.onclick = () => {
-                    // Switch Tab Logic
-                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                    tab.classList.add('active');
-                    grid.innerHTML = XLSX.utils.sheet_to_html(workbook.Sheets[sheetName]);
-                };
-                tabBar.appendChild(tab);
-            });
-
-            // Load First Sheet
-            grid.innerHTML = XLSX.utils.sheet_to_html(workbook.Sheets[workbook.SheetNames[0]]);
-
-        } catch (err) {
-            console.error(err);
-            grid.innerHTML = '<span style="color:#ef4444">Error loading file. Check that the repo is public.</span>';
-        }
+      } catch (err) {
+        console.error('Model loading error:', err);
+        grid.innerHTML = `<span class="error-text">Error: ${err.message}. Ensure the GitHub repository is public and the file exists.</span>`;
+        btn.innerText = "Retry";
+      } finally {
+        btn.disabled = false;
+      }
     }
   </script>
 </body>
